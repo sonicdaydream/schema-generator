@@ -35,10 +35,14 @@ export default function Home() {
 
   // 履歴を保存
   const saveToHistory = (newResult: any) => {
+    const schemaString = typeof newResult.schema === 'string' 
+      ? newResult.schema 
+      : JSON.stringify(newResult.schema, null, 2);
+    
     const newItem: HistoryItem = {
       url: url,
-      pageType: newResult.pageType,
-      schema: newResult.schema,
+      pageType: newResult.pageType || 'Unknown',
+      schema: schemaString,
       timestamp: Date.now(),
     };
     const updatedHistory = [newItem, ...history].slice(0, 10); // 最新10件のみ保持
@@ -78,7 +82,10 @@ export default function Home() {
 
   const copyToClipboard = () => {
     if (result?.schema) {
-      navigator.clipboard.writeText(result.schema);
+      const schemaString = typeof result.schema === 'string' 
+        ? result.schema 
+        : JSON.stringify(result.schema, null, 2);
+      navigator.clipboard.writeText(schemaString);
       alert('コピーしました!');
     }
   };
@@ -98,7 +105,10 @@ export default function Home() {
     window.open('https://validator.schema.org/', '_blank');
     // コードをクリップボードにコピーして、ユーザーが貼り付けやすくする
     if (result?.schema) {
-      navigator.clipboard.writeText(result.schema);
+      const schemaString = typeof result.schema === 'string' 
+        ? result.schema 
+        : JSON.stringify(result.schema, null, 2);
+      navigator.clipboard.writeText(schemaString);
       // 少し遅延してからアラート表示
       setTimeout(() => {
         alert('コードをクリップボードにコピーしました!\n開いたページに貼り付けて検証してください。');
@@ -119,6 +129,31 @@ export default function Home() {
   // サンプルURLをセット
   const setSampleUrl = (sampleUrl: string) => {
     setUrl(sampleUrl);
+  };
+
+  // スキーマを文字列として取得
+  const getSchemaString = () => {
+    if (!result?.schema) return '';
+    return typeof result.schema === 'string' 
+      ? result.schema 
+      : JSON.stringify(result.schema, null, 2);
+  };
+
+  // ページタイプを取得
+  const getPageType = () => {
+    if (!result?.schema) return 'Unknown';
+    
+    // schemaがオブジェクトの場合
+    if (typeof result.schema === 'object') {
+      // 配列の場合は最初の要素の@type
+      if (Array.isArray(result.schema)) {
+        return result.schema[0]?.['@type'] || 'Multiple';
+      }
+      // 単一オブジェクトの場合
+      return result.schema['@type'] || 'Unknown';
+    }
+    
+    return result.pageType || 'Unknown';
   };
 
   return (
@@ -263,7 +298,7 @@ export default function Home() {
               <h2 className="text-xl font-bold mb-4">検出されたページタイプ</h2>
               <div className="flex items-center gap-3">
                 <span className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full font-medium">
-                  {result.pageType}
+                  {getPageType()}
                 </span>
                 <span className="text-gray-600 dark:text-gray-300">
                   {result.confidence && `信頼度: ${Math.round(result.confidence * 100)}%`}
@@ -297,7 +332,7 @@ export default function Home() {
                 </div>
               </div>
               <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm">
-                <code>{result.schema}</code>
+                <code>{getSchemaString()}</code>
               </pre>
             </div>
 
@@ -344,7 +379,7 @@ export default function Home() {
                   Googleで「アイテムが検出されませんでした」と表示される
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  → <strong>これは正常です！</strong> Organization, WebSite, BreadcrumbListなどのスキーマは
+                  → <strong>これは正常です!</strong> Organization, WebSite, BreadcrumbListなどのスキーマは
                   リッチリザルト対象外ですが、SEO効果はあります。Schema.orgで検証してエラーがなければOKです。
                 </p>
               </div>
@@ -353,7 +388,7 @@ export default function Home() {
                   リッチリザルトに表示されないけど意味ある?
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  → <strong>絶対に実装すべきです！</strong> ナレッジパネル、音声検索、AIアシスタント、
+                  → <strong>絶対に実装すべきです!</strong> ナレッジパネル、音声検索、AIアシスタント、
                   検索エンジンの理解向上に役立ちます。将来のリッチリザルト対応の可能性もあります。
                 </p>
               </div>
@@ -362,7 +397,7 @@ export default function Home() {
                   WebSiteスキーマが追加で生成された
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  → <strong>これは正常です！</strong> ECサイトやポータルサイトなど、サイト内検索機能がある場合、
+                  → <strong>これは正常です!</strong> ECサイトやポータルサイトなど、サイト内検索機能がある場合、
                   Googleの「サイトリンク検索ボックス」表示のためにWebSiteスキーマも自動生成されます。
                 </p>
               </div>
