@@ -143,14 +143,29 @@ export default function Home() {
   const getPageType = () => {
     if (!result?.schema) return 'Unknown';
     
+    // schemaが文字列の場合、パースしてから取得
+    if (typeof result.schema === 'string') {
+      try {
+        const parsed = JSON.parse(result.schema);
+        if (Array.isArray(parsed)) {
+          const types = parsed.map(s => s?.['@type']).filter(Boolean).join(', ');
+          return types || 'Multiple';
+        }
+        return parsed?.['@type'] || 'Unknown';
+      } catch (e) {
+        return result.pageType || 'Unknown';
+      }
+    }
+    
     // schemaがオブジェクトの場合
     if (typeof result.schema === 'object') {
       // 配列の場合は最初の要素の@type
       if (Array.isArray(result.schema)) {
-        return result.schema[0]?.['@type'] || 'Multiple';
+        const types = result.schema.map(s => s?.['@type']).filter(Boolean).join(', ');
+        return types || 'Multiple';
       }
       // 単一オブジェクトの場合
-      return result.schema['@type'] || 'Unknown';
+      return result.schema['@type']?.toString() || 'Unknown';
     }
     
     return result.pageType || 'Unknown';
