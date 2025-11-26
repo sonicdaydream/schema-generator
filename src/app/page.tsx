@@ -148,7 +148,7 @@ export default function Home() {
       try {
         const parsed = JSON.parse(result.schema);
         if (Array.isArray(parsed)) {
-          const types = parsed.map(s => s?.['@type']).filter(Boolean).join(', ');
+          const types = parsed.map((s: any) => s?.['@type']).filter(Boolean).join(', ');
           return types || 'Multiple';
         }
         return parsed?.['@type'] || 'Unknown';
@@ -161,7 +161,7 @@ export default function Home() {
     if (typeof result.schema === 'object') {
       // 配列の場合は最初の要素の@type
       if (Array.isArray(result.schema)) {
-        const types = result.schema.map(s => s?.['@type']).filter(Boolean).join(', ');
+        const types = result.schema.map((s: any) => s?.['@type']).filter(Boolean).join(', ');
         return types || 'Multiple';
       }
       // 単一オブジェクトの場合
