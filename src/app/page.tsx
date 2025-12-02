@@ -12,9 +12,10 @@ interface HistoryItem {
 
 // サンプルURL集
 const SAMPLE_URLS = [
-  { label: '企業サイト例', url: 'https://toyota.jp' },
+  { label: '企業サイト例', url: 'https://alarmbox.jp' },
   { label: 'ブログ記事例', url: 'https://zenn.dev' },
   { label: 'ECサイト例', url: 'https://www.superdelivery.com' },
+  { label: '商品ページ例', url: 'https://www.amazon.co.jp/dp/B0CX23V2ZK' },
 ];
 
 export default function Home() {
@@ -35,14 +36,10 @@ export default function Home() {
 
   // 履歴を保存
   const saveToHistory = (newResult: any) => {
-    const schemaString = typeof newResult.schema === 'string' 
-      ? newResult.schema 
-      : JSON.stringify(newResult.schema, null, 2);
-    
     const newItem: HistoryItem = {
       url: url,
-      pageType: newResult.pageType || 'Unknown',
-      schema: schemaString,
+      pageType: newResult.pageType,
+      schema: newResult.schema,
       timestamp: Date.now(),
     };
     const updatedHistory = [newItem, ...history].slice(0, 10); // 最新10件のみ保持
@@ -82,10 +79,7 @@ export default function Home() {
 
   const copyToClipboard = () => {
     if (result?.schema) {
-      const schemaString = typeof result.schema === 'string' 
-        ? result.schema 
-        : JSON.stringify(result.schema, null, 2);
-      navigator.clipboard.writeText(schemaString);
+      navigator.clipboard.writeText(result.schema);
       alert('コピーしました!');
     }
   };
@@ -105,10 +99,7 @@ export default function Home() {
     window.open('https://validator.schema.org/', '_blank');
     // コードをクリップボードにコピーして、ユーザーが貼り付けやすくする
     if (result?.schema) {
-      const schemaString = typeof result.schema === 'string' 
-        ? result.schema 
-        : JSON.stringify(result.schema, null, 2);
-      navigator.clipboard.writeText(schemaString);
+      navigator.clipboard.writeText(result.schema);
       // 少し遅延してからアラート表示
       setTimeout(() => {
         alert('コードをクリップボードにコピーしました!\n開いたページに貼り付けて検証してください。');
@@ -131,46 +122,6 @@ export default function Home() {
     setUrl(sampleUrl);
   };
 
-  // スキーマを文字列として取得
-  const getSchemaString = () => {
-    if (!result?.schema) return '';
-    return typeof result.schema === 'string' 
-      ? result.schema 
-      : JSON.stringify(result.schema, null, 2);
-  };
-
-  // ページタイプを取得
-  const getPageType = () => {
-    if (!result?.schema) return 'Unknown';
-    
-    // schemaが文字列の場合、パースしてから取得
-    if (typeof result.schema === 'string') {
-      try {
-        const parsed = JSON.parse(result.schema);
-        if (Array.isArray(parsed)) {
-          const types = parsed.map((s: any) => s?.['@type']).filter(Boolean).join(', ');
-          return types || 'Multiple';
-        }
-        return parsed?.['@type'] || 'Unknown';
-      } catch (e) {
-        return result.pageType || 'Unknown';
-      }
-    }
-    
-    // schemaがオブジェクトの場合
-    if (typeof result.schema === 'object') {
-      // 配列の場合は最初の要素の@type
-      if (Array.isArray(result.schema)) {
-        const types = result.schema.map((s: any) => s?.['@type']).filter(Boolean).join(', ');
-        return types || 'Multiple';
-      }
-      // 単一オブジェクトの場合
-      return result.schema['@type']?.toString() || 'Unknown';
-    }
-    
-    return result.pageType || 'Unknown';
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
       <main className="container mx-auto px-4 py-12 max-w-4xl">
@@ -182,6 +133,20 @@ export default function Home() {
           <p className="text-gray-600 dark:text-gray-300 text-lg mb-4">
             URLを入力するだけで、最適な構造化データ(JSON-LD)を自動生成
           </p>
+          <div className="flex flex-wrap justify-center gap-2 text-sm">
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+              Organization
+            </span>
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+              Article
+            </span>
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+              WebSite
+            </span>
+            <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
+              Product ✨NEW
+            </span>
+          </div>
         </div>
 
         {/* タブ */}
@@ -313,7 +278,7 @@ export default function Home() {
               <h2 className="text-xl font-bold mb-4">検出されたページタイプ</h2>
               <div className="flex items-center gap-3">
                 <span className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full font-medium">
-                  {getPageType()}
+                  {result.pageType}
                 </span>
                 <span className="text-gray-600 dark:text-gray-300">
                   {result.confidence && `信頼度: ${Math.round(result.confidence * 100)}%`}
@@ -347,7 +312,7 @@ export default function Home() {
                 </div>
               </div>
               <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm">
-                <code>{getSchemaString()}</code>
+                <code>{result.schema}</code>
               </pre>
             </div>
 
@@ -394,7 +359,7 @@ export default function Home() {
                   Googleで「アイテムが検出されませんでした」と表示される
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  → <strong>これは正常です!</strong> Organization, WebSite, BreadcrumbListなどのスキーマは
+                  → <strong>これは正常です！</strong> Organization, WebSite, BreadcrumbListなどのスキーマは
                   リッチリザルト対象外ですが、SEO効果はあります。Schema.orgで検証してエラーがなければOKです。
                 </p>
               </div>
@@ -403,7 +368,7 @@ export default function Home() {
                   リッチリザルトに表示されないけど意味ある?
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  → <strong>絶対に実装すべきです!</strong> ナレッジパネル、音声検索、AIアシスタント、
+                  → <strong>絶対に実装すべきです！</strong> ナレッジパネル、音声検索、AIアシスタント、
                   検索エンジンの理解向上に役立ちます。将来のリッチリザルト対応の可能性もあります。
                 </p>
               </div>
@@ -412,7 +377,7 @@ export default function Home() {
                   WebSiteスキーマが追加で生成された
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  → <strong>これは正常です!</strong> ECサイトやポータルサイトなど、サイト内検索機能がある場合、
+                  → <strong>これは正常です！</strong> ECサイトやポータルサイトなど、サイト内検索機能がある場合、
                   Googleの「サイトリンク検索ボックス」表示のためにWebSiteスキーマも自動生成されます。
                 </p>
               </div>
@@ -439,12 +404,19 @@ export default function Home() {
 
         {/* 機能説明 */}
         {!showHistory && (
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
+          <div className="mt-12 grid md:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
             <div className="text-3xl mb-3">🎯</div>
             <h3 className="font-bold mb-2">SEO価値重視</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               SNSリンク、連絡先、所在地など、リッチな情報を優先抽出
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+            <div className="text-3xl mb-3">🛍️</div>
+            <h3 className="font-bold mb-2">EC商品対応</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              価格、在庫、レビュー情報を自動抽出
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
